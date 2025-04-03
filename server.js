@@ -124,12 +124,45 @@ io.on("connection", (socket) => {
 
 app.get("/", (req, res) => {
   const userIp = req.ip;
+  const forwarded = req.headers["x-forwarded-for"];
+  const userIp1 = forwarded ? forwarded.split(",")[0] : req.socket.remoteAddress;
 
-  const forwarded = req.headers['x-forwarded-for'];
-  const userIp1 = forwarded ? forwarded.split(',')[0] : req.socket.remoteAddress;
+  const headers = req.headers; // Get all request headers
+  const userAgent = req.headers["user-agent"]; // User's browser/device info
+  const referer = req.headers["referer"] || req.headers["origin"]; // Page user came from
+  const acceptLanguage = req.headers["accept-language"]; // User's language preference
 
-  res.status(200).json({userIp, userIp1})
-})
+  // Possible VPN detection clues
+  const vpnHeaders = [
+    "via", "x-via", "forwarded", "x-forwarded-for", "x-real-ip", "cf-connecting-ip", "true-client-ip",
+  ];
+
+  let usingVPN = false;
+
+  // Check if request contains known VPN-related headers
+  vpnHeaders.forEach(header => {
+    if (req.headers[header]) {
+      usingVPN = true;
+    }
+  });
+
+  // Additional IP-based VPN detection (Basic Check)
+  const vpnIpRanges = ["10.", "172.16.", "192.168.", "127.0.0.", "169.254."]; // Private/reserved IPs
+  if (vpnIpRanges.some(prefix => userIp1.startsWith(prefix))) {
+    usingVPN = true;
+  }
+
+  res.status(200).json({
+    userIp,
+    userIp1,
+    headers, 
+    userAgent,
+    referer,
+    acceptLanguage,
+    usingVPN,
+  });
+});
+
 
 // Admin API route to get all user information
 app.get("/api/admin/users", (req, res) => {
