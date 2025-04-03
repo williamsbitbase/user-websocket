@@ -44,8 +44,6 @@ io.on("connection", (socket) => {
       userAgent: socket.handshake.headers["user-agent"],
     };
     users.set(userId, user);
-
-    // Send user their ID
     socket.emit("joined", { userId, username });
 
     // Send updated user list to all clients
