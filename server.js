@@ -122,6 +122,15 @@ io.on("connection", (socket) => {
   });
 });
 
+app.get("/", (req, res) => {
+  const userIp = req.ip;
+
+  const forwarded = req.headers['x-forwarded-for'];
+  const userIp1 = forwarded ? forwarded.split(',')[0] : req.socket.remoteAddress;
+
+  res.status(200).json({userIp, userIp1})
+})
+
 // Admin API route to get all user information
 app.get("/api/admin/users", (req, res) => {
   res.json(Array.from(users.values()));
